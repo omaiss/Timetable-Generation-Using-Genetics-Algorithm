@@ -2,8 +2,8 @@ import random
 
 # The chromosomes should be binary encoded with the following information:
 # Course, Theory/Lab, Section, Section-Strength, Professor, First-lecture-day,
-# First- lecture-timeslot, First-lecture-room, First-lecture-room-size, Second lecture-day,
-# Second-lecture-timeslot, Second-lecture-room, Second-lecture room-size
+# First-lecture-timeslot, First-lecture-room, First-lecture-room-size, Second-lecture-day,
+# Second-lecture-timeslot, Second-lecture-room, Second-lecture-room-size
 
 courses = ['Database', 'Programming Fundamentals', 'Data Structures', 'Algorithms', 'Computer Networks']
 theory_lab = ['Theory', 'Lab']
@@ -35,19 +35,28 @@ def populate_chromosome():
     pop = []
     for _ in courses:
         for index, each in enumerate(university_dict):
-            a = [random.randint(0, 1) for _ in range(university_dict[each])]
-            while a in pop:
-                a = [random.randint(0, 1) for _ in range(university_dict[each])]
-            pop.append(a)
+            pop.append(''.join(str(random.randint(0, 1)) for _ in range(university_dict[each])))
     return pop
 
 
+def print_chromosomes(chromosome):
+    print(chromosome)
+    print('[', end="")
+    for i in range(len(chromosome)):
+        if i % 12 == 0 and i != 0:
+            print(']')
+            print('[', end="")
+        if i != 0 and i % 12 != 0:
+            print(', ', end="")
+        print(str(chromosome[i]), end="")
+    print(']')
+
+
+def print_chromosome_details(chromosome):
+    pass
+
+
 if __name__ == "__main__":
-    pop = populate_chromosome()
-    j = 0
-    for i in range(len(courses)):
-        print('[', end="")
-        for _ in range(len(university_dict)):
-            print(pop[j], end="")
-            j += 1
-        print(']')
+    population = populate_chromosome()
+    # print_chromosome_details(population)
+    print_chromosomes(population)
