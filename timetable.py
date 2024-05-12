@@ -51,11 +51,13 @@ university_dict = {
 }
 
 
-def populate_chromosome():
+def populate_chromosome(n_pop):
     pop = []
-    for _ in courses:
-        for index, each in enumerate(university_dict):
-            pop.append(''.join(str(random.randint(0, 1)) for _ in range(university_dict[each])))
+    for i in range(n_pop):
+        pop.append([])
+        for _ in courses:
+            for index, each in enumerate(university_dict):
+                pop[i].append(''.join(str(random.randint(0, 1)) for _ in range(university_dict[each])))
     return pop
 
 
@@ -66,6 +68,7 @@ def print_chromosomes(chromosome):
 
 def calculate_fitness(chromosome):
     clash_counts = 0
+    chromosome = twoD_chromosome(chromosome)
     for i in range(len(courses)):
         for j in range(len(courses)):
             # check if the course's First Lectures are on the same day
@@ -112,23 +115,86 @@ def twoD_chromosome(chromosome):
 
 
 # tournament selection
-def selection(pop, scores, k=3):
-    # first random selection
-    selection_ix = random.randint(0, len(pop))
-    for ix in [random.randint(0, len(pop), k - 1)]:
-        # check if better (e.g. perform a tournament)
-        if scores[ix] < scores[selection_ix]:
-            selection_ix = ix
-    return pop[selection_ix]
+def selection(pop, scores):
+    # Select two random individuals
+    idx1 = random.randint(0, len(pop) - 1)
+    idx2 = random.randint(0, len(pop) - 1)
+
+    # Return the individual with the lower fitness score
+    if scores[idx1] < scores[idx2]:
+        return pop[idx1]
+    else:
+        return pop[idx2]
 
 
-def genetic_algorithm(_population_):
-    fitness_score = calculate_fitness(_population_)
-    print(f'Fitness for current generation: {fitness_score}')
+def crossover(p1, p2, r_cross):
+    # children are copies of parents by default
+    c1, c2 = p1.copy(), p2.copy()
+    # check for recombination
+    if random.random() < r_cross:
+        # select crossover point that is not on the end of the string
+        pt = random.randint(1, len(p1) - 2)
+        # perform crossover
+        c1 = p1[:pt] + p2[pt:]
+        c2 = p2[:pt] + p1[pt:]
+    return [c1, c2]
+
+
+def mutation(bitstring, r_mut):
+    for i in range(len(bitstring)):
+        # check for a mutation
+        if random.random() < r_mut:
+            # flip the bit
+            bitstring[i] = 1 - bitstring[i]
+
+
+# genetic algorithm
+def genetic_algorithm(objective, n_iter, n_pop, r_cross, r_mut):
+    # initial population of random bitstring
+    pop = populate_chromosome(n_pop)
+    # keep track of best solution
+    best, best_eval = None, float('inf')
+    # enumerate generations
+    for gen in range(n_iter):
+        # evaluate all candidates in the population
+        scores = [objective(c) for c in pop]
+        # check for new best solution
+        for i in range(n_pop):
+            if scores[i] < best_eval:
+                best, best_eval = pop[i], scores[i]
+                print(">%d, new best f(%s) = %.3f" % (gen, pop[i], scores[i]))
+        # select parents
+        selected = [selection(pop, scores) for _ in range(n_pop)]
+        # create the next generation
+        children = list()
+        for i in range(0, n_pop, 2):
+            # get selected parents in pairs
+            p1, p2 = selected[i], selected[i + 1]
+            # crossover and mutation
+            for c in crossover(p1, p2, r_cross):
+                # mutation
+                mutation(c, r_mut)
+                # store for next generation
+                children.append(c)
+        # replace population
+        pop = children
+    return [best, best_eval]
 
 
 if __name__ == "__main__":
-    population = populate_chromosome()
-    two_d_population = twoD_chromosome(chromosome=population)
-    print_chromosomes(two_d_population)
-    # print_chromosome_details(population)
+    pop = populate_chromosome(2)
+    t = twoD_chromosome(pop[0])
+    print_chromosomes(t)
+    # best_timetable = None
+    # best_fitness = float('inf')
+    #
+    # while True:
+    #     [current_best, current_fitness] = genetic_algorithm(calculate_fitness, n_iter=100, n_pop=2, r_cross=0.9,
+    #                                                         r_mut=0.01)
+    #
+    #     if current_fitness < best_fitness:
+    #         best_timetable = current_best
+    #         best_fitness = current_fitness
+    #         print("New best timetable found with fitness:", best_fitness)
+    #     else:
+    #         print("No improvement in fitness. Continuing...")
